@@ -3,7 +3,7 @@ Analisis Colas de supermercado
 -------------------------------------------------------------------------
 
 Eventos
--------------------------------------------------------------------------
+
 llegada_cliente      exp media 12''
 cobro_caja           normal(15'';3'')
 compra_art_cliente   uniforme a = 8'' b=10''
@@ -11,7 +11,7 @@ compra_art_cliente   uniforme a = 8'' b=10''
 -------------------------------------------------------------------------
 
 Objetos
--------------------------------------------------------------------------
+
 Cliente (t) {comprando (C)| esperando_atencion(EA) | siendo_atendido(SA)}
 Caja(i) (P) {Libre | Ocupada}
 i = 1,2,3
@@ -27,3 +27,34 @@ C Art | P()  | P() AC
 -------------------------------------------------------------------------
 
 La cantidad maxima de clientes que pueden estar comprando a la vez es de 10
+
+-------------------------------------------------------------------------
+Vector de estado
+
+Evento
+Reloj (en segundos)
+llegada_cliente
+    - rnd llegada
+    - tiempo entre llegada
+    - proxima llegada
+compra_art_cliente
+    - rnd articulos
+    - cantidad articulos
+    - rnd compra
+    - tiempo compra
+    - fin_compra(i)
+        - i = 1,2,3,4,5,6,7,8,9,10 (cantidad de clientes)
+atencion_en_caja
+    - rnd 1 atencion_caja
+    - rnd 2 atencion_caja
+    - tiempo_atencion_caja
+    -fin_atencion_caja(i)
+        - i = 1,2,3 (cantidad de cajas)
+cajas(i)
+    - estado_caja(i)
+cantidad de clientes que compran
+cantidad de clientes que no compran
+Clientes(i)
+    -estado_cliente(i)
+-------------------------------------------------------------------------
+
