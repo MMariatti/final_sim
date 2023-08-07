@@ -371,4 +371,3 @@ class Simulador:
             # Agrego evento a la lista de eventos de la iteracion
             eventos_iteracion.append(nuevo_evento)
         return self.generar_vector_estado(evento_actual, eventos_iteracion)
-    
