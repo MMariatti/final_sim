@@ -4,15 +4,16 @@ class Cliente:
     id = None
     estado = None
     caja = None
-
+    hora_fin_compra = None
     ESTADO_COMPRANDO = "Comprando"
     ESTADO_ESPERANDO_ATENCION = "Esperando atencion"
     ESTADO_SIENDO_ATENDIDO = "Siendo atendido"
 
-    def __init__(self, id_cliente=None, estado=None,    caja=None):
+    def __init__(self, id_cliente=None, estado=None, caja=None, hora_fin_compra=None):
         self.id = id_cliente
         self.estado = estado
         self.caja = caja
+        self.hora_fin_compra = hora_fin_compra
 
     def cambiar_a_estado_comprando(self):
         self.estado = Cliente.ESTADO_COMPRANDO
@@ -49,4 +50,18 @@ class Cliente:
         }
 
     def __str__(self):
-        return str(self.cliente_dict())
+        return "Cliente(id={id}, estado={estado}, caja={caja}, hora_fin_compra={hora_fin_compra})".format(
+            id=str(self.id),
+            estado=self.estado,
+            caja=self.caja if self.caja is not None else "None",
+            hora_fin_compra=str(self.hora_fin_compra)
+        )
+
+    def __repr__(self):
+        return "Cliente(id={id}, estado={estado}, caja={caja}, hora_fin_compra={hora_fin_compra})".format(
+            id=str(self.id),
+            estado=self.estado,
+            caja=self.caja if self.caja is not None else "None",
+            hora_fin_compra=str(self.hora_fin_compra)
+        )
+
