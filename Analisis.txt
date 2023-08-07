@@ -4,9 +4,9 @@ Analisis Colas de supermercado
 
 Eventos
 
-llegada_cliente      exp media 12''
-cobro_caja           normal(15'';3'')
-compra_art_cliente   uniforme a = 8'' b=10''
+llegada_cliente                    exp media 12''
+fin_atencion_cliente_caja          normal(15'';3'')
+fin_compra_cliente                 uniforme a = 8'' b=10''
 
 -------------------------------------------------------------------------
 
