@@ -42,7 +42,7 @@ class Simulador:
     tiempo_llegada_cliente = None
     tiempo_atencion_caja = None
     tiempo_compra_articulos_cliente = None
-    cantidad_cajas = None
+    cantidad_cajas = 3
     cantidad_clientes = None
     cantidad_de_clientes_comprando_simultaneamente = None   # No puede ser mayor a 10
     cantidad_de_clientes_que_compran = None
@@ -218,8 +218,8 @@ class Simulador:
         elif evento_actual.tipo == Evento.TIPO_LLEGADA_CLIENTE:
 
             # Chequeo que no haya mas de 10 clientes comprando en simultaneo
-            if self.cantidad_de_clientes_que_compran < 10:
-                self.cantidad_de_clientes_que_compran += 1
+            if self.cantidad_de_clientes_comprando_simultaneamente < 10:
+                self.cantidad_de_clientes_comprando_simultaneamente += 1
                 # Genero evento fin compra cliente
                 tipo_evento = Evento.TIPO_FIN_COMPRA_CLIENTE
                 # Genero nuevo cliente
@@ -326,8 +326,10 @@ class Simulador:
                 tiempo_atencion = round(math.sqrt(-2 * math.log(rnd1)) * math.cos(2 * math.pi * rnd2) * 3 + 15, 2)
                 tiempo_fin = round(evento_actual.tiempo_fin + tiempo_atencion, 2)
                 cliente = self.cola.obtener_proximo_cliente()
+
                 # Cambio estado de caja a ocupada
-                evento_actual.caja.estado = Caja.ESTADO_OCUPADA
+                evento_actual.caja.cambiar_a_estado_ocupado()
+
                 # asigno a la caja el cliente que esta siendo atendido
                 evento_actual.caja.asignar_cliente(cliente)
 
@@ -344,7 +346,8 @@ class Simulador:
                 eventos_iteracion.append(nuevo_evento)
             else:
                 # Si no hay clientes en la cola de espera, libero la caja
-                evento_actual.caja.liberar_caja()
+                evento_actual.caja.cambiar_a_estado_libre()
+                evento_actual.caja.desasignar_cliente()
 
             if evento_actual.cliente.articulos > 0:
                 self.cantidad_de_clientes_que_compran += 1
@@ -371,3 +374,114 @@ class Simulador:
             # Agrego evento a la lista de eventos de la iteracion
             eventos_iteracion.append(nuevo_evento)
         return self.generar_vector_estado(evento_actual, eventos_iteracion)
+
+    def simular(self):
+
+        # Reestablezco atributos necesarios para el manejo de la simulacion
+        self.manejador_eventos = None
+        self.cola = None
+        self.grupo_cajas = None
+        self.cantidad_de_clientes_comprando_simultaneamente = 0
+        self.cantidad_de_clientes_que_compran = 0
+        self.cantidad_total_clientes = 0
+        self.porcentaje_clientes_que_compran = 0
+        self.rnd_tiempo_compra = None
+        self.rnd_cantidad_articulos = None
+        self.rnd_1_atencion_caja = None
+        self.rnd_2_atencion_caja = None
+        self.rnd_tiempo_proxima_llegada = None
+        self.cantidad_articulos = 0
+        self.cantidad_clientes = 0
+
+        # Creo el manejador de eventos
+        self.manejador_eventos = ManejadorEventos()
+
+        # Agrego evento de inicializacion
+        tipo = Evento.TIPO_INICIALIZACION
+        reloj = 0
+        evento = Evento(tipo_evento=tipo, tiempo=reloj)
+        self.manejador_eventos.agregar_evento(evento)
+
+        # Creo grupo de cajas
+        cola_espera = Cola(id_cola="cola_espera", clientes=[])
+        cajas = []
+        for i in range(0, self.cantidad_cajas):
+            caja = Caja(id_caja=i, estado=Caja.ESTADO_LIBRE, cliente=None)
+            cajas.append(caja)
+        self.grupo_cajas = GrupoCajas(cajas=cajas, cola=cola_espera)
+
+        # Calculo cada cuantas simulaciones mostrar el porcentaje de simulación
+        if self.tiempo_simulacion <= 100:
+            paso_muestra_datos = 1
+        else:
+            paso_muestra_datos = round(self.tiempo_simulacion / 50)
+        proxima_muestra_datos = paso_muestra_datos
+
+        # Flujo principal de la simulacion
+        ultimo_vector_estado_agregado = True
+        cantidad_iteraciones_agregadas = 0
+        iteraciones_simuladas = []
+
+        while 1:
+
+            # Controlo que el reloj aún no supere el tiempo de simulación
+            vector_estado_proximo = self.simular_iteracion()
+            if vector_estado_proximo.get("reloj") > self.tiempo_simulacion:
+                break
+
+            # Si no se salió del bucle, seteo que no se agrego el último vector de estado
+            ultimo_vector_estado_agregado = False
+
+            # Seteo vector estado
+            vector_estado = vector_estado_proximo
+
+            # Agrego iteración a iteraciones simuladas si el reloj y la cantidad de iteraciones están dentro de los
+            # parámetros solicitados, controlando si se agregó el último vector para no agregarlo mas tarde
+
+            if (vector_estado.get("reloj") >= self.tiempo_desde and
+                    cantidad_iteraciones_agregadas < self.cantidad_iteraciones):
+                ultimo_vector_estado_agregado = True
+                cantidad_iteraciones_agregadas += 1
+                iteraciones_simuladas.append(vector_estado)
+
+                # Agrego id de cliente a los ids de clientes durante las iteraciones a mostrar
+                if len(self.ids_clientes_iteraciones) == 0:
+                    for cliente in self.clientes:
+                        self.ids_clientes_iteraciones.append(cliente.id)
+                else:
+                    if self.ultimo_id_cliente != self.ids_clientes_iteraciones[-1]:
+                        self.ids_clientes_iteraciones.append(self.ultimo_id_cliente)
+
+            # Muestro porcentaje de simulación cuando corresponda
+            if vector_estado.get("reloj") >= proxima_muestra_datos:
+                porcentaje = round(vector_estado.get("reloj") / self.tiempo_simulacion * 100)
+                self.controlador.mostrar_porcentaje_simulacion(porcentaje)
+                while proxima_muestra_datos <= vector_estado.get("reloj"):
+                    proxima_muestra_datos += paso_muestra_datos
+        # Agrego ultimo vector de estado si aún no se agregó o modifico el último agregado si si se hizo
+        if not ultimo_vector_estado_agregado:
+            vector_estado = vector_estado_proximo
+            vector_estado["clientes"] = {}
+            iteraciones_simuladas.append(vector_estado)
+
+        # Genero diccionario con informacion sobre la simulacion
+
+        ids_cajas = []
+        if self.grupo_cajas:
+            ids_cajas = [caja.id for caja in self.grupo_cajas.cajas]
+
+        ids_cola_cajas = [self.grupo_cajas.cola.id]
+
+        ids_clientes = self.ids_clientes_iteraciones
+        informacion_simulacion = {
+            "ids_cajas": ids_cajas,
+            "ids_cola_cajas": ids_cola_cajas,
+            "ids_clientes": ids_clientes,
+            "cantidad_iteraciones_realizadas": iteraciones_simuladas[-1].get("n_iteracion"),
+        }
+
+        # Muestro porcentaje de simulación final
+        self.controlador.mostrar_porcentaje_simulacion(100)
+
+        # Devuelvo iteraciones simuladas de interés
+        return iteraciones_simuladas, informacion_simulacion
