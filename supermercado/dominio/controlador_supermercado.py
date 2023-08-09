@@ -1,4 +1,4 @@
-from dominio.clases.simulador import Simulador
+from supermercado.dominio.clases.simulador import Simulador
 
 
 class ControlladorSupermercado:

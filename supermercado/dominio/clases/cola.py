@@ -1,7 +1,9 @@
 class Cola:
+    id_cola = None
     clientes = []
 
-    def __init__(self, clientes=[]):
+    def __init__(self, id_cola,clientes=[]):
+        id_cola = id_cola
         self.clientes = clientes
 
     def agregar_cliente(self, cliente):

@@ -1,6 +1,6 @@
 import bisect
 
-from dominio.clases.empleado import Caja
+from supermercado.dominio.clases.caja import Caja
 
 
 class GrupoCajas:

@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="sim">
+    <file>sim.png</file>
+  </qresource>
+</RCC>
