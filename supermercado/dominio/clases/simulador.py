@@ -14,15 +14,15 @@ from supermercado.soporte.helper import truncar
 
 
 def obtener_cantidad_articulos(rnd_art):
-    if 0 < rnd_art < 0.1:
+    if 0 <= rnd_art < 0.1:
         return 0
-    elif 0.1 < rnd_art < 0.25:
+    elif 0.1 <= rnd_art < 0.25:
         return 1
-    elif 0.25 < rnd_art < 0.5:
+    elif 0.25 <= rnd_art < 0.5:
         return 2
-    elif 0.5 < rnd_art < 0.7:
+    elif 0.5 <= rnd_art < 0.7:
         return 3
-    elif 0.7 < rnd_art < 0.85:
+    elif 0.7 <= rnd_art < 0.85:
         return 4
     else:
         return 5
@@ -139,6 +139,9 @@ class Simulador:
                 vector_estado["fines_compra"][evento_anterior.cliente.id] = evento_anterior.tiempo_fin
             elif evento_anterior.tipo == Evento.TIPO_FIN_ATENCION_CLIENTE:
                 vector_estado["fines_atencion_caja"][evento_anterior.caja.id] = evento_anterior.tiempo_fin
+                vector_estado["estado_cajas"][evento_anterior.caja.id] = evento_anterior.caja.estado
+                # vector_estado["cola"] = len(self.cola.clientes)
+                # vector_estado["clientes"][evento_anterior.cliente.id] = evento_anterior.cliente.estado
 
         for nuevo_evento in nuevos_eventos:
             if nuevo_evento.tipo == Evento.TIPO_LLEGADA_CLIENTE:
@@ -149,7 +152,6 @@ class Simulador:
                 vector_estado["cantidad_articulos"] = nuevo_evento.articulos
                 vector_estado["rnd_tiempo_compra"] = nuevo_evento.rnd_tiempo_compra
                 vector_estado["tiempo_compra"] = nuevo_evento.rnd_tiempo_compra
-                print("nuevo evento", nuevo_evento)
                 vector_estado["fines_compra"][nuevo_evento.cliente.id] = nuevo_evento.tiempo_fin
             elif nuevo_evento.tipo == Evento.TIPO_FIN_COMPRA_CLIENTE:
                 vector_estado["rnd_1_atencion_caja"] = nuevo_evento.rnd1_atencion_caja
@@ -157,6 +159,11 @@ class Simulador:
                 vector_estado["tiempo_atencion_caja"] = nuevo_evento.tiempo
                 if nuevo_evento.caja is not None:
                     vector_estado["fines_atencion_caja"][nuevo_evento.caja.id] = nuevo_evento.tiempo_fin
+            elif nuevo_evento.tipo == Evento.TIPO_FIN_ATENCION_CLIENTE:
+                vector_estado["fines_atencion_caja"][nuevo_evento.caja.id] = nuevo_evento.tiempo_fin
+                vector_estado["estado_cajas"][nuevo_evento.caja.id] = nuevo_evento.caja.estado
+                # vector_estado["cola"] = len(self.cola.clientes)
+                # vector_estado["clientes"][nuevo_evento.cliente.id] = nuevo_evento.cliente.estado
 
             # Cola de las cajas, es una sola cola para las 3 cajas
             vector_estado["cola"] = self.grupo_cajas.cola
@@ -168,7 +175,6 @@ class Simulador:
             # Clientes que estan en el supermercado
             for cliente in self.clientes:
                 vector_estado["clientes"][cliente.id] = cliente.cliente_dict()
-
         return vector_estado
 
     def simular_iteracion(self):
@@ -195,8 +201,6 @@ class Simulador:
         # Inicializo lista de eventos generados durante la iteracion
 
         eventos_iteracion = []
-        print(eventos_iteracion)
-
         # Evento actual inicializacion
 
         if evento_actual.tipo == Evento.TIPO_INICIALIZACION:
@@ -214,7 +218,6 @@ class Simulador:
 
             nuevo_evento = Evento(tipo_evento, rnd_llegada_cliente=rnd, tiempo=tiempo, tiempo_fin=tiempo_fin,
                                   cliente=cliente)
-            print("Evento llegada cliente: " + str(nuevo_evento))
             # Agrego evento a la lista de eventos de la iteracion
             self.manejador_eventos.agregar_evento(nuevo_evento)
 
@@ -239,10 +242,11 @@ class Simulador:
                 # articulos
                 tiempo_compra = round((rnd_tiempo_compra * 2) + 8, 2) * cantidad_articulos
                 tiempo_fin = round(evento_actual.tiempo_fin + tiempo_compra, 2)
-
+                cliente = evento_actual.cliente
+                cliente.estado = Cliente.ESTADO_COMPRANDO
                 # Agrego evento a la lista de eventos de la iteracion
                 nuevo_evento = Evento(tipo_evento, rnd_cant_articulos=rnd_art, rnd_tiempo_compra=rnd_tiempo_compra,
-                                      tiempo=tiempo_compra, tiempo_fin=tiempo_fin, cliente=evento_actual.cliente,
+                                      tiempo=tiempo_compra, tiempo_fin=tiempo_fin, cliente=cliente,
                                       articulos=cantidad_articulos)
 
                 self.manejador_eventos.agregar_evento(nuevo_evento)
@@ -276,6 +280,8 @@ class Simulador:
                 self.cantidad_total_clientes += 1
 
         if evento_actual.tipo == Evento.TIPO_FIN_COMPRA_CLIENTE:
+            print("articulos  del evento actual cuando el tipo es fin compra cliente")
+            print(evento_actual.articulos)
 
             # Decremento el contador porque el cliente termino de comprar
             self.cantidad_de_clientes_comprando_simultaneamente -= 1
@@ -305,8 +311,8 @@ class Simulador:
 
                 # Agrego evento a la lista de eventos de la iteracion
                 nuevo_evento = Evento(tipo_evento, rnd1_atencion_caja=rnd1, rnd2_atencion_caja=rnd2,
-                                      tiempo=tiempo_atencion, tiempo_fin=tiempo_fin, caja=caja,
-                                      cliente=evento_actual.cliente)
+                                      tiempo=tiempo_atencion, tiempo_fin=tiempo_fin, caja=evento_actual.cliente.caja,
+                                      cliente=evento_actual.cliente, articulos=evento_actual.articulos)
                 self.manejador_eventos.agregar_evento(nuevo_evento)
 
                 # Agrego evento a la lista de eventos de la iteracion
@@ -317,13 +323,15 @@ class Simulador:
                 evento_actual.cliente.estado = Cliente.ESTADO_ESPERANDO_ATENCION
 
         if evento_actual.tipo == Evento.TIPO_FIN_ATENCION_CLIENTE:
+            print("articulos  del evento actual cuando el tipo es fin atencion cliente")
+            print(evento_actual.articulos)
             # Genero fin de atencion de cliente
             tipo_evento = Evento.TIPO_FIN_ATENCION_CLIENTE
             tiempo_fin = round(evento_actual.tiempo_fin, 2)
 
             # Busco si hay clientes en la cola de espera
             existe_prox_cliente = self.cola.existe_proximo_cliente()
-            if existe_prox_cliente is not None:
+            if existe_prox_cliente:
                 # Genero tiempo de atencion con distribucion normal media 15 y desviacion 3
                 tipo_evento = Evento.TIPO_FIN_ATENCION_CLIENTE
                 rnd1 = truncar(random.random(), 2)
@@ -345,7 +353,7 @@ class Simulador:
                 # Agrego evento a la lista de eventos de la iteracion
                 nuevo_evento = Evento(tipo_evento, rnd1_atencion_caja=rnd1, rnd2_atencion_caja=rnd2,
                                       tiempo=tiempo_atencion, tiempo_fin=tiempo_fin, caja=evento_actual.caja,
-                                      cliente=cliente)
+                                      cliente=cliente, articulos=evento_actual.articulos)
                 self.manejador_eventos.agregar_evento(nuevo_evento)
 
                 # Agrego evento a la lista de eventos de la iteracion
@@ -355,7 +363,7 @@ class Simulador:
                 evento_actual.caja.cambiar_a_estado_libre()
                 evento_actual.caja.desasignar_cliente()
 
-            if evento_actual.cliente.articulos > 0:
+            if evento_actual.articulos > 0:
                 self.cantidad_de_clientes_que_compran += 1
                 self.cantidad_clientes += 1
                 self.porcentaje_clientes_que_compran = round(
@@ -371,7 +379,7 @@ class Simulador:
             # Destruyo cliente
             evento_actual.cliente = None
             # Libero caja
-            evento_actual.caja.liberar_caja()
+            evento_actual.caja.cambiar_a_estado_libre()
 
             # Agrego evento a la lista de eventos de la iteracion
             nuevo_evento = Evento(tipo_evento, tiempo_fin=tiempo_fin, caja=evento_actual.caja)
@@ -402,7 +410,6 @@ class Simulador:
 
         # Creo el manejador de eventos
         self.manejador_eventos = ManejadorEventos()
-        print(self.manejador_eventos)
 
         # Agrego evento de inicializacion
         tipo = Evento.TIPO_INICIALIZACION
@@ -411,12 +418,12 @@ class Simulador:
         self.manejador_eventos.agregar_evento(evento)
 
         # Creo grupo de cajas
-        cola_espera = Cola(id_cola="cola_espera", clientes=[])
+        self.cola = Cola(id_cola="cola_espera", clientes=[])
         cajas = []
         for i in range(0, self.cantidad_cajas):
             caja = Caja(id_caja=i, estado=Caja.ESTADO_LIBRE, cliente=None)
             cajas.append(caja)
-        self.grupo_cajas = GrupoCajas(cajas=cajas, cola=cola_espera)
+        self.grupo_cajas = GrupoCajas(cajas=cajas, cola=self.cola)
 
         # Calculo cada cuantas simulaciones mostrar el porcentaje de simulación
         if self.tiempo_simulacion <= 100:

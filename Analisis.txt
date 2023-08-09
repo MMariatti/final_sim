@@ -57,4 +57,6 @@ cantidad de clientes que no compran
 Clientes(i)
     -estado_cliente(i)
 -------------------------------------------------------------------------
-
+ Consideraciones:
+  - Si el cliente compra 0 articulos, se toma como que no compró nada y se suma 1 al total de clientes
+  - Si el cliente llega y ya hay 10 clientes comprando en ese instante de tiempo, se va y se suma 1 al total de clientes 
