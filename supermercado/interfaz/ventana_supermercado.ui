@@ -7,13 +7,19 @@
     <x>0</x>
     <y>0</y>
     <width>1170</width>
-    <height>779</height>
+    <height>700</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>779</height>
+    <height>700</height>
    </size>
   </property>
   <property name="palette">
@@ -472,6 +478,12 @@
    </size>
   </property>
   <widget class="QWidget" name="central_widget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <layout class="QGridLayout" name="gridLayout">
     <property name="leftMargin">
      <number>10</number>
@@ -511,7 +523,7 @@
         <property name="minimumSize">
          <size>
           <width>150</width>
-          <height>40</height>
+          <height>0</height>
          </size>
         </property>
         <property name="text">
@@ -524,7 +536,7 @@
         <property name="minimumSize">
          <size>
           <width>150</width>
-          <height>40</height>
+          <height>0</height>
          </size>
         </property>
         <property name="text">
@@ -1029,10 +1041,16 @@
     </item>
     <item row="1" column="0">
      <widget class="QTableWidget" name="grid_iteraciones_simuladas">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>1150</width>
-        <height>350</height>
+        <height>310</height>
        </size>
       </property>
       <attribute name="horizontalHeaderDefaultSectionSize">
